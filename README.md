@@ -29,7 +29,7 @@
 > - API文档完善
 > - 性能优化
 > - 安全沙箱实现
-> 
+> - 可视化界面
 
 
 ## 📁 项目结构
@@ -106,6 +106,10 @@ uv run python main.py
 # 或直接运行（需要先激活虚拟环境）
 python main.py
 ```
+
+## 🔨使用截图
+![alt text](docs/5a36d0e7b88b0c8f4b339c031d579c89.png)
+![alt text](docs/822d670272bf8309637dd10395810729.png)
 
 ## 🔧 技能模块（claudecode兼容）
 
