@@ -222,7 +222,7 @@ class SkillManager:
         return resources
     
     async def _register_skill_tools(self, skill_name: str, skill_dir: str):
-        """Register Python files from skill directory as tools.
+        """Register Python files from skill directory as tools with intelligent discovery.
         
         Args:
             skill_name (str): Name of the skill
@@ -231,7 +231,11 @@ class SkillManager:
         with self._registration_lock:
             skill_path = Path(skill_dir)
             
-            for py_file in skill_path.glob("*.py"):
+            # Look for Python files in both root and scripts subdirectory
+            py_files = list(skill_path.glob("*.py"))
+            py_files.extend(skill_path.glob("scripts/*.py"))
+            
+            for py_file in py_files:
                 if py_file.name == "__init__.py":
                     continue
                     
@@ -242,20 +246,234 @@ class SkillManager:
                     module = importlib.util.module_from_spec(spec)
                     spec.loader.exec_module(module)
                     
-                    # Register functions that are marked as tools
-                    for attr_name in dir(module):
-                        attr = getattr(module, attr_name)
-                        if (callable(attr) and 
-                            hasattr(attr, '__skill_tool__') and 
-                            attr.__skill_tool__):
-                            
-                            self.toolkit.register_tool_function(
-                                tool_func=attr,
-                                group_name=skill_name
-                            )
+                    logger.info(f"Loaded module {module_name} from {py_file}")
+                    
+                    # Intelligent tool registration with multiple strategies
+                    tool_count = 0
+                    
+                    # Strategy 1: Explicit @skill_tool decorator (highest priority)
+                    tool_count += self._register_explicit_tools(module, skill_name)
+                    
+                    # Strategy 2: Naming convention detection
+                    tool_count += self._register_by_naming_convention(module, skill_name)
+                    
+                    # Strategy 3: Docstring analysis
+                    tool_count += self._register_by_docstring_analysis(module, skill_name)
+                    
+                    # Strategy 4: Type hints analysis
+                    tool_count += self._register_by_type_hints(module, skill_name)
+                    
+                    logger.info(f"Registered {tool_count} tools from {py_file}")
                             
                 except Exception as e:
                     logger.warning(f"Failed to load tools from {py_file}: {e}")
+                    import traceback
+                    logger.warning(f"Traceback: {traceback.format_exc()}")
+    
+    def _register_explicit_tools(self, module, skill_name: str) -> int:
+        """Register tools with explicit @skill_tool decorator."""
+        count = 0
+        for attr_name in dir(module):
+            attr = getattr(module, attr_name)
+            if (callable(attr) and 
+                hasattr(attr, '__skill_tool__') and 
+                attr.__skill_tool__):
+                
+                description = getattr(attr, '__skill_tool_description__', '')
+                logger.info(f"Registering explicit tool: {attr_name}")
+                
+                # 检查工具是否已经注册
+                if attr_name in self.toolkit.tools:
+                    logger.warning(f"Tool {attr_name} already registered, skipping")
+                    continue
+                
+                # 创建一个包装函数，确保工具可以被正确调用
+                def wrapped_tool(*args, **kwargs):
+                    try:
+                        return attr(*args, **kwargs)
+                    except Exception as e:
+                        logger.error(f"Tool {attr_name} execution failed: {e}")
+                        return f"Error executing {attr_name}: {str(e)}"
+                
+                # 保持原始函数的属性
+                wrapped_tool.__name__ = attr_name
+                wrapped_tool.__doc__ = getattr(attr, '__doc__', '')
+                wrapped_tool.__skill_tool__ = True
+                wrapped_tool.__skill_tool_description__ = description
+                
+                self.toolkit.register_tool_function(
+                    tool_func=wrapped_tool,
+                    group_name=skill_name
+                )
+                count += 1
+        return count
+    
+    def _register_by_naming_convention(self, module, skill_name: str) -> int:
+        """Register tools based on naming conventions."""
+        # Tool function patterns
+        tool_patterns = [
+            'extract_', 'analyze_', 'process_', 'convert_', 
+            'create_', 'generate_', 'check_', 'get_', 
+            'parse_', 'transform_', 'validate_', 'search_'
+        ]
+        
+        count = 0
+        for attr_name in dir(module):
+            attr = getattr(module, attr_name)
+            if callable(attr) and not hasattr(attr, '__skill_tool__'):
+                # Check if function name matches tool patterns
+                if any(pattern in attr_name.lower() for pattern in tool_patterns):
+                    logger.info(f"Registering tool by naming: {attr_name}")
+                    
+                    # 检查工具是否已经注册
+                    if attr_name in self.toolkit.tools:
+                        logger.warning(f"Tool {attr_name} already registered, skipping")
+                        continue
+                    
+                    # 创建包装函数
+                    def wrapped_tool(*args, **kwargs):
+                        try:
+                            return attr(*args, **kwargs)
+                        except Exception as e:
+                            logger.error(f"Tool {attr_name} execution failed: {e}")
+                            return f"Error executing {attr_name}: {str(e)}"
+                    
+                    wrapped_tool.__name__ = attr_name
+                    wrapped_tool.__doc__ = getattr(attr, '__doc__', '')
+                    
+                    self.toolkit.register_tool_function(
+                        tool_func=wrapped_tool,
+                        group_name=skill_name
+                    )
+                    count += 1
+        return count
+    
+    def _register_by_docstring_analysis(self, module, skill_name: str) -> int:
+        """Register tools based on docstring analysis."""
+        count = 0
+        for attr_name in dir(module):
+            attr = getattr(module, attr_name)
+            if (callable(attr) and 
+                not hasattr(attr, '__skill_tool__') and
+                attr.__doc__):
+                
+                doc = attr.__doc__
+                if doc and self._is_tool_docstring(doc):
+                    logger.info(f"Registering tool by docstring: {attr_name}")
+                    
+                    # 检查工具是否已经注册
+                    if attr_name in self.toolkit.tools:
+                        logger.warning(f"Tool {attr_name} already registered, skipping")
+                        continue
+                    
+                    # 创建包装函数
+                    def wrapped_tool(*args, **kwargs):
+                        try:
+                            return attr(*args, **kwargs)
+                        except Exception as e:
+                            logger.error(f"Tool {attr_name} execution failed: {e}")
+                            return f"Error executing {attr_name}: {str(e)}"
+                    
+                    wrapped_tool.__name__ = attr_name
+                    wrapped_tool.__doc__ = doc
+                    
+                    self.toolkit.register_tool_function(
+                        tool_func=wrapped_tool,
+                        group_name=skill_name
+                    )
+                    count += 1
+        return count
+    
+    def _register_by_type_hints(self, module, skill_name: str) -> int:
+        """Register tools based on type hints."""
+        count = 0
+        for attr_name in dir(module):
+            attr = getattr(module, attr_name)
+            if (callable(attr) and 
+                not hasattr(attr, '__skill_tool__') and
+                not attr.__doc__ and
+                hasattr(attr, '__annotations__')):
+                
+                annotations = attr.__annotations__
+                if annotations and 'return' in annotations:
+                    return_type = annotations['return']
+                    # Check if return type suggests a tool function
+                    if return_type in [str, dict, list, bool, int, float]:
+                        logger.info(f"Registering tool by type hints: {attr_name}")
+                        
+                        # 检查工具是否已经注册
+                        if attr_name in self.toolkit.tools:
+                            logger.warning(f"Tool {attr_name} already registered, skipping")
+                            continue
+                        
+                        # 创建包装函数
+                        def wrapped_tool(*args, **kwargs):
+                            try:
+                                return attr(*args, **kwargs)
+                            except Exception as e:
+                                logger.error(f"Tool {attr_name} execution failed: {e}")
+                                return f"Error executing {attr_name}: {str(e)}"
+                        
+                        wrapped_tool.__name__ = attr_name
+                        wrapped_tool.__doc__ = f"Tool function with return type: {return_type}"
+                        
+                        self.toolkit.register_tool_function(
+                            tool_func=wrapped_tool,
+                            group_name=skill_name
+                        )
+                        count += 1
+        return count
+    
+    def _is_tool_docstring(self, doc: str) -> bool:
+        """Check if docstring indicates a tool function."""
+        if not doc:
+            return False
+        
+        doc_lower = doc.lower()
+        tool_indicators = [
+            'tool:', 'extract', 'analyze', 'process', 'convert',
+            'create', 'generate', 'check', 'parse', 'transform',
+            'validate', 'search', 'function:', 'method:'
+        ]
+        
+        return any(indicator in doc_lower for indicator in tool_indicators)
+    
+    def _generate_tool_description(self, attr_name: str, func) -> str:
+        """Generate tool description from function name and signature."""
+        # Convert snake_case to readable format
+        name_parts = attr_name.split('_')
+        if len(name_parts) >= 2:
+            action = name_parts[0]
+            object_name = '_'.join(name_parts[1:])
+            
+            descriptions = {
+                'extract': f'Extract {object_name}',
+                'analyze': f'Analyze {object_name}',
+                'process': f'Process {object_name}',
+                'convert': f'Convert {object_name}',
+                'create': f'Create {object_name}',
+                'generate': f'Generate {object_name}',
+                'check': f'Check {object_name}',
+                'get': f'Get {object_name}',
+                'parse': f'Parse {object_name}',
+                'transform': f'Transform {object_name}',
+                'validate': f'Validate {object_name}',
+                'search': f'Search {object_name}',
+            }
+            
+            return descriptions.get(action, f'{attr_name.replace("_", " ").title()}')
+        
+        return attr_name.replace('_', ' ').title()
+    
+    def _generate_description_from_type_hints(self, attr_name: str, func, annotations: dict) -> str:
+        """Generate description from type hints."""
+        params = []
+        for param_name, param_type in annotations.items():
+            if param_name != 'return':
+                params.append(f"{param_name}: {param_type.__name__ if hasattr(param_type, '__name__') else str(param_type)}")
+        
+        return_type = annotations.get('return', 'Any')
+        return f'{attr_name.replace("_", " ").title()}({", ".join(params)}) -> {return_type}'
     
     def _get_skill_tools(self, skill_name: str) -> List[str]:
         """Get list of tool names for a specific skill.
