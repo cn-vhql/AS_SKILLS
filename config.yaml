@@ -1,0 +1,188 @@
+# Agent Skills Configuration File
+# This file contains configuration for SkilledReActAgent and related components
+
+# Model Configuration
+model:
+  # Default model provider and settings
+  provider: "dashscope"
+  model_name: "qwen-max"
+  api_key_env: "DASHSCOPE_API_KEY"
+  
+  # Model parameters
+  parameters:
+    stream: true
+
+# Agent Configuration
+agent:
+  # Basic agent settings
+  name: "ProductionAgent"
+  auto_skill_discovery: true
+  skill_matching_threshold: 0.7
+  max_iters: 10
+  print_hint_msg: true
+  
+  # System prompt
+  system_prompt: |
+    You are an intelligent assistant with access to specialized skills.
+    
+    You can automatically detect when tasks require specific expertise and activate relevant skills.
+    Always consider which skills might be helpful for the current task.
+    
+    Available skills will be automatically discovered and loaded as needed.
+    You can use skill management tools (list_skills, activate_skill, deactivate_skill, get_skill_content) to manage these skills.
+    
+    When responding to users:
+    1. Analyze task requirements
+    2. Identify relevant skills
+    3. Activate appropriate skills
+    4. Execute the task using skill tools
+    5. Provide clear, helpful responses
+
+# Skill Manager Configuration
+skill_manager:
+  # Skill discovery settings
+  skill_directory: "skills"
+  auto_reload: false
+  cache_enabled: true
+  
+  # Progressive disclosure settings
+  progressive_disclosure:
+    enable_metadata_caching: true
+    enable_content_caching: true
+    max_cache_size: 100
+    cache_ttl: 3600
+  
+  # Skill matching settings
+  matching:
+    algorithm: "keyword_overlap"
+    threshold: 0.7
+    weights:
+      name_match: 0.8
+      description_match: 0.6
+      content_match: 0.4
+
+# Memory Configuration
+memory:
+  # Memory type and settings
+  type: "in_memory"
+  
+  # In-memory memory settings
+  in_memory:
+    max_messages: 100
+    retain_strategy: "recent"
+
+# Logging Configuration
+logging:
+  # Log level and format
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  
+  # Log file settings
+  file:
+    enabled: true
+    path: "./logs/agent_skills.log"
+    max_size: "10MB"
+    backup_count: 5
+    rotation: "daily"
+  
+  # Console logging
+  console:
+    enabled: true
+    colored: true
+
+# Security Configuration
+security:
+  # Skill security settings
+  skills:
+    verify_sources: true
+    allowed_paths: ["./skills", "./temp"]
+    blocked_extensions: [".exe", ".bat", ".sh", ".ps1"]
+    max_file_size: "10MB"
+  
+  # Data protection
+  data_protection:
+    sanitize_inputs: true
+    mask_sensitive_data: true
+    encrypt_cache: false
+  
+  # Execution sandbox
+  sandbox:
+    enabled: false
+    timeout: 30
+    memory_limit: "512MB"
+
+# Performance Configuration
+performance:
+  # Caching settings
+  cache:
+    enabled: true
+    type: "memory"
+    max_size: "100MB"
+    ttl: 3600
+  
+  # Concurrency settings
+  concurrency:
+    max_concurrent_skills: 5
+    max_concurrent_tools: 10
+    thread_pool_size: 4
+  
+  # Resource limits
+  resources:
+    max_memory_per_skill: "50MB"
+    max_execution_time: 60
+    cleanup_interval: 300
+
+# Development Configuration
+development:
+  # Debug settings
+  debug:
+    enabled: false
+    verbose_logging: false
+    print_stack_traces: false
+  
+  # Testing settings
+  testing:
+    mock_external_apis: true
+    test_data_path: "./test_data"
+    enable_test_mode: false
+  
+  # Hot reload settings
+  hot_reload:
+    enabled: false
+    watch_directories: ["./skills", "./config"]
+    debounce_delay: 1
+
+# Demo Configuration
+demo:
+  # Demo scenarios (simplified for production)
+  scenarios: []
+  
+  # Demo settings
+  settings:
+    auto_run: false
+    interactive_mode: true
+    show_skill_recommendations: true
+    show_active_skills: true
+    delay_between_scenarios: 2
+
+# Extension Configuration
+extensions:
+  # Custom skill directories
+  skill_directories:
+    - "./skills"
+  
+  # Plugin system (future feature)
+  plugins:
+    enabled: false
+    directory: "./plugins"
+    auto_load: true
+  
+  # Integration settings
+  integrations:
+    mcp_servers:
+      enabled: false
+      servers: []
+    
+    external_apis:
+      enabled: false
+      endpoints: []
