@@ -25,9 +25,6 @@ dependencies = [
     "selenium>=4.8.0",
 ]
 
-[tool.uv.sources]
-agentscope = { workspace = true }
-
 [[tool.uv.index]]
 url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 default = true

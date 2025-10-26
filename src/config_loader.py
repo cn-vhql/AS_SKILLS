@@ -89,7 +89,7 @@ class Config:
 class ConfigLoader:
     """Configuration loader and manager."""
     
-    def __init__(self, config_path: str = "config.yaml"):
+    def __init__(self, config_path: str = "../config/config.yaml"):
         """Initialize config loader.
         
         Args:
