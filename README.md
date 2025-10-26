@@ -1,7 +1,6 @@
 # AS_SKILLS - 技能化AI框架
 
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![uv](https://img.shields.io/badge/uv-0.8+-purple.svg)](https://github.com/astral-sh/uv)
 
 这是一个基于AgentScope框架的AI助手应用，支持自动技能发现、智能任务匹配和终端交互，兼容Claude Skills文件格式。
@@ -187,11 +186,11 @@ uv sync --dev
 cat pyproject.toml
 ```
 
-## 📚 API文档
+## 📚 相关文档
 
-详细的API文档请参考：
-- [AgentScope文档](https://agentscope.readthedocs.io/)
-- [技能开发指南](skills/README.md)
+文档请参考：
+- [AgentScope文档](https://doc.agentscope.io/zh_CN/index.html)
+- [Claude Skills文档](https://github.com/anthropics/skills)
 
 ## 📮 联系方式
 如有问题或建议或其他合作需求，请通过以下方式联系我们：
