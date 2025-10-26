@@ -1,15 +1,15 @@
-# AS_SKILLS - 技能化AI助手
+# AS_SKILLS - 技能化AI框架
 
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![uv](https://img.shields.io/badge/uv-0.8+-purple.svg)](https://github.com/astral-sh/uv)
 
-这是一个基于AgentScope框架的AI助手应用，支持自动技能发现、智能任务匹配和终端交互，兼容claudecode的skill文件。
+这是一个基于AgentScope框架的AI助手应用，支持自动技能发现、智能任务匹配和终端交互，兼容Claude Skills文件格式。
 
 ## 🚀 特性
 
 - **🤖 智能代理**: 基于AgentScope框架的ReAct代理
-- **🔧 技能系统**: 自动技能发现和激活，兼容claudecode的skill文件
+- **🔧 技能系统**: 自动技能发现和激活，兼容Claude Skills文件格式
 - **📊 多模态支持**: 支持文档处理、数据分析、Web测试等
 - **⚡ 高性能**: 异步处理和并发执行
 - **🛠️ 开发友好**: 完整的配置管理和错误处理
@@ -111,9 +111,9 @@ python main.py
 ![alt text](docs/5a36d0e7b88b0c8f4b339c031d579c89.png)
 ![alt text](docs/822d670272bf8309637dd10395810729.png)
 
-## 🔧 技能模块（claudecode兼容）
+## 🔧 技能模块（Claude Skills兼容）
 
-项目包含12个专业技能模块(来自claudecode的skill文件)：
+项目包含12个专业技能模块(来自Claude Skills开源项目)：
 
 ### 📊 数据分析
 - **algorithmic-art**: 算法艺术生成
@@ -159,8 +159,6 @@ python main.py
 ```
 
 ## 🧪 开发
-
-> **注意**: 当前项目处于开发阶段，测试框架和开发工具配置正在完善中
 
 ### 代码质量工具
 ```bash
@@ -216,3 +214,7 @@ cat pyproject.toml
 ---
 
 **AS_SKILLS** - 让AI更智能，让工作更高效 🚀
+
+
+
+
