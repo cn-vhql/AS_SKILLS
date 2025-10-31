@@ -267,3 +267,4 @@ tests/
 *_test.py
 test_*.py
 CLAUDE.md
+test_bash_tools.txt

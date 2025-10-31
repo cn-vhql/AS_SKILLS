@@ -5,7 +5,7 @@
 model:
   # Default model provider and settings
   provider: "dashscope"
-  model_name: "qwen-max"
+  model_name: "qwen3-32b"
   api_key_env: "DASHSCOPE_API_KEY"
   
   # Model parameters

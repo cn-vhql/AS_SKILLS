@@ -291,7 +291,13 @@ class SkillManager:
                 # 使用默认参数来避免闭包问题
                 def wrapped_tool(*args, attr_name=attr_name, attr=attr, **kwargs):
                     try:
-                        result = attr(*args, **kwargs)
+                        # 过滤掉不需要的参数，只传递有效的参数给原始函数
+                        # AgentScope可能传递额外的参数，我们需要过滤掉
+                        filtered_kwargs = {k: v for k, v in kwargs.items()
+                                         if k not in ['attr', 'attr_name']}
+
+                        # 调用原始函数
+                        result = attr(*args, **filtered_kwargs)
                         # Convert string result to ToolResponse format
                         if isinstance(result, str):
                             return ToolResponse(
@@ -353,7 +359,13 @@ class SkillManager:
                     # 使用默认参数来避免闭包问题
                     def wrapped_tool(*args, attr_name=attr_name, attr=attr, **kwargs):
                         try:
-                            result = attr(*args, **kwargs)
+                            # 过滤掉不需要的参数，只传递有效的参数给原始函数
+                            # AgentScope可能传递额外的参数，我们需要过滤掉
+                            filtered_kwargs = {k: v for k, v in kwargs.items()
+                                             if k not in ['attr', 'attr_name']}
+
+                            # 调用原始函数
+                            result = attr(*args, **filtered_kwargs)
                             # Convert string result to ToolResponse format
                             if isinstance(result, str):
                                 return ToolResponse(
@@ -412,7 +424,13 @@ class SkillManager:
                     # 使用默认参数来避免闭包问题
                     def wrapped_tool(*args, attr_name=attr_name, attr=attr, **kwargs):
                         try:
-                            result = attr(*args, **kwargs)
+                            # 过滤掉不需要的参数，只传递有效的参数给原始函数
+                            # AgentScope可能传递额外的参数，我们需要过滤掉
+                            filtered_kwargs = {k: v for k, v in kwargs.items()
+                                             if k not in ['attr', 'attr_name']}
+
+                            # 调用原始函数
+                            result = attr(*args, **filtered_kwargs)
                             # Convert string result to ToolResponse format
                             if isinstance(result, str):
                                 return ToolResponse(
