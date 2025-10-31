@@ -287,13 +287,32 @@ class SkillManager:
                     logger.warning(f"Tool {attr_name} already registered, skipping")
                     continue
                 
-                # 创建一个包装函数，确保工具可以被正确调用
-                def wrapped_tool(*args, **kwargs):
+                # 创建一个包装函数，确保工具可以被正确调用并返回ToolResponse
+                # 使用默认参数来避免闭包问题
+                def wrapped_tool(*args, attr_name=attr_name, attr=attr, **kwargs):
                     try:
-                        return attr(*args, **kwargs)
+                        result = attr(*args, **kwargs)
+                        # Convert string result to ToolResponse format
+                        if isinstance(result, str):
+                            return ToolResponse(
+                                content=[TextBlock(type="text", text=result)],
+                                is_last=True
+                            )
+                        elif isinstance(result, ToolResponse):
+                            return result
+                        else:
+                            # Convert other types to string
+                            return ToolResponse(
+                                content=[TextBlock(type="text", text=str(result))],
+                                is_last=True
+                            )
                     except Exception as e:
-                        logger.error(f"Tool {attr_name} execution failed: {e}")
-                        return f"Error executing {attr_name}: {str(e)}"
+                        error_msg = f"Error executing {attr_name}: {str(e)}"
+                        logger.error(error_msg)
+                        return ToolResponse(
+                            content=[TextBlock(type="text", text=error_msg)],
+                            is_last=True
+                        )
                 
                 # 保持原始函数的属性
                 wrapped_tool.__name__ = attr_name
@@ -331,16 +350,35 @@ class SkillManager:
                         continue
                     
                     # 创建包装函数
-                    def wrapped_tool(*args, **kwargs):
+                    # 使用默认参数来避免闭包问题
+                    def wrapped_tool(*args, attr_name=attr_name, attr=attr, **kwargs):
                         try:
-                            return attr(*args, **kwargs)
+                            result = attr(*args, **kwargs)
+                            # Convert string result to ToolResponse format
+                            if isinstance(result, str):
+                                return ToolResponse(
+                                    content=[TextBlock(type="text", text=result)],
+                                    is_last=True
+                                )
+                            elif isinstance(result, ToolResponse):
+                                return result
+                            else:
+                                # Convert other types to string
+                                return ToolResponse(
+                                    content=[TextBlock(type="text", text=str(result))],
+                                    is_last=True
+                                )
                         except Exception as e:
-                            logger.error(f"Tool {attr_name} execution failed: {e}")
-                            return f"Error executing {attr_name}: {str(e)}"
-                    
+                            error_msg = f"Error executing {attr_name}: {str(e)}"
+                            logger.error(error_msg)
+                            return ToolResponse(
+                                content=[TextBlock(type="text", text=error_msg)],
+                                is_last=True
+                            )
+
                     wrapped_tool.__name__ = attr_name
                     wrapped_tool.__doc__ = getattr(attr, '__doc__', '')
-                    
+
                     self.toolkit.register_tool_function(
                         tool_func=wrapped_tool,
                         group_name=skill_name
@@ -353,30 +391,53 @@ class SkillManager:
         count = 0
         for attr_name in dir(module):
             attr = getattr(module, attr_name)
-            if (callable(attr) and 
-                not hasattr(attr, '__skill_tool__') and
-                attr.__doc__):
-                
+            # Skip non-callable, private attributes, and common Python built-ins
+            if (not callable(attr) or
+                attr_name.startswith('_') or
+                hasattr(attr, '__skill_tool__') or
+                not attr.__doc__ or
+                attr_name in ['Any', 'Dict', 'List', 'Optional', 'Tuple', 'Set', 'Union', 'Type', 'Optional']):
+                continue
+
                 doc = attr.__doc__
                 if doc and self._is_tool_docstring(doc):
                     logger.info(f"Registering tool by docstring: {attr_name}")
-                    
+
                     # 检查工具是否已经注册
                     if attr_name in self.toolkit.tools:
                         logger.warning(f"Tool {attr_name} already registered, skipping")
                         continue
-                    
+
                     # 创建包装函数
-                    def wrapped_tool(*args, **kwargs):
+                    # 使用默认参数来避免闭包问题
+                    def wrapped_tool(*args, attr_name=attr_name, attr=attr, **kwargs):
                         try:
-                            return attr(*args, **kwargs)
+                            result = attr(*args, **kwargs)
+                            # Convert string result to ToolResponse format
+                            if isinstance(result, str):
+                                return ToolResponse(
+                                    content=[TextBlock(type="text", text=result)],
+                                    is_last=True
+                                )
+                            elif isinstance(result, ToolResponse):
+                                return result
+                            else:
+                                # Convert other types to string
+                                return ToolResponse(
+                                    content=[TextBlock(type="text", text=str(result))],
+                                    is_last=True
+                                )
                         except Exception as e:
-                            logger.error(f"Tool {attr_name} execution failed: {e}")
-                            return f"Error executing {attr_name}: {str(e)}"
-                    
+                            error_msg = f"Error executing {attr_name}: {str(e)}"
+                            logger.error(error_msg)
+                            return ToolResponse(
+                                content=[TextBlock(type="text", text=error_msg)],
+                                is_last=True
+                            )
+
                     wrapped_tool.__name__ = attr_name
                     wrapped_tool.__doc__ = doc
-                    
+
                     self.toolkit.register_tool_function(
                         tool_func=wrapped_tool,
                         group_name=skill_name
@@ -407,16 +468,35 @@ class SkillManager:
                             continue
                         
                         # 创建包装函数
-                        def wrapped_tool(*args, **kwargs):
+                        # 使用默认参数来避免闭包问题
+                        def wrapped_tool(*args, attr_name=attr_name, attr=attr, **kwargs):
                             try:
-                                return attr(*args, **kwargs)
+                                result = attr(*args, **kwargs)
+                                # Convert string result to ToolResponse format
+                                if isinstance(result, str):
+                                    return ToolResponse(
+                                        content=[TextBlock(type="text", text=result)],
+                                        is_last=True
+                                    )
+                                elif isinstance(result, ToolResponse):
+                                    return result
+                                else:
+                                    # Convert other types to string
+                                    return ToolResponse(
+                                        content=[TextBlock(type="text", text=str(result))],
+                                        is_last=True
+                                    )
                             except Exception as e:
-                                logger.error(f"Tool {attr_name} execution failed: {e}")
-                                return f"Error executing {attr_name}: {str(e)}"
-                        
+                                error_msg = f"Error executing {attr_name}: {str(e)}"
+                                logger.error(error_msg)
+                                return ToolResponse(
+                                    content=[TextBlock(type="text", text=error_msg)],
+                                    is_last=True
+                                )
+
                         wrapped_tool.__name__ = attr_name
                         wrapped_tool.__doc__ = f"Tool function with return type: {return_type}"
-                        
+
                         self.toolkit.register_tool_function(
                             tool_func=wrapped_tool,
                             group_name=skill_name

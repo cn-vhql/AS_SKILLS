@@ -71,18 +71,18 @@ class SkilledReActAgent(ReActAgent):
             skill_matching_threshold (float): Threshold for skill matching
         """
         
-        # Initialize skill manager
+        # Initialize skill manager first
         self.skill_manager = SkillManager(skill_directory)
         self.auto_skill_discovery = auto_skill_discovery
         self.skill_matching_threshold = skill_matching_threshold
         self.active_skills: List[str] = []
-        
+
         # LRU cache for skill context with size limit
         self._max_cache_size = 50
         self._skill_context_cache: OrderedDict[str, tuple] = OrderedDict()  # (content, timestamp)
-        
-        # Create toolkit with skill management
-        toolkit = Toolkit()
+
+        # Use skill manager's toolkit directly - all skill tools will be available
+        toolkit = self.skill_manager.toolkit
         
         # Initialize parent class
         super().__init__(
@@ -168,7 +168,7 @@ class SkilledReActAgent(ReActAgent):
     
     def _register_skill_management_tools(self):
         """Register tools for skill management."""
-        
+
         async def list_skills() -> ToolResponse:
             """List all available skills with their descriptions."""
             summary = self.skill_manager.get_skill_metadata_summary()
@@ -176,10 +176,10 @@ class SkilledReActAgent(ReActAgent):
                 content=[TextBlock(type="text", text=summary)],
                 is_last=True
             )
-        
+
         async def activate_skill(skill_name: str) -> ToolResponse:
             """Activate a specific skill and its tools.
-            
+
             Args:
                 skill_name (str): Name of the skill to activate
             """
@@ -187,17 +187,17 @@ class SkilledReActAgent(ReActAgent):
             if success:
                 if skill_name not in self.active_skills:
                     self.active_skills.append(skill_name)
-                
+
                 # Get skill content for context
                 try:
                     skill_content = self.skill_manager.get_skill_content(skill_name)
                     self._add_to_cache(skill_name, skill_content)
                 except Exception as e:
                     logger.warning(f"Failed to load skill content: {e}")
-                
+
                 return ToolResponse(
                     content=[TextBlock(
-                        type="text", 
+                        type="text",
                         text=f"Successfully activated skill: {skill_name}"
                     )],
                     is_last=True
@@ -210,10 +210,10 @@ class SkilledReActAgent(ReActAgent):
                     )],
                     is_last=True
                 )
-        
+
         async def deactivate_skill(skill_name: str) -> ToolResponse:
             """Deactivate a specific skill.
-            
+
             Args:
                 skill_name (str): Name of the skill to deactivate
             """
@@ -222,7 +222,7 @@ class SkilledReActAgent(ReActAgent):
                 if skill_name in self.active_skills:
                     self.active_skills.remove(skill_name)
                 self._remove_from_cache(skill_name)
-                
+
                 return ToolResponse(
                     content=[TextBlock(
                         type="text",
@@ -238,10 +238,10 @@ class SkilledReActAgent(ReActAgent):
                     )],
                     is_last=True
                 )
-        
+
         async def get_skill_content(skill_name: str, include_resources: bool = False) -> ToolResponse:
             """Get the content of a specific skill.
-            
+
             Args:
                 skill_name (str): Name of the skill
                 include_resources (bool): Whether to include additional resources
@@ -262,13 +262,14 @@ class SkilledReActAgent(ReActAgent):
                     )],
                     is_last=True
                 )
-        
+
         # Register the tools
         self.toolkit.register_tool_function(list_skills)
         self.toolkit.register_tool_function(activate_skill)
         self.toolkit.register_tool_function(deactivate_skill)
         self.toolkit.register_tool_function(get_skill_content)
-    
+
+        
     async def _match_skills_to_task(self, user_message: str) -> List[str]:
         """Match skills to the current task based on user message.
         
@@ -313,17 +314,17 @@ class SkilledReActAgent(ReActAgent):
     
     async def _auto_activate_skills(self, user_message: str):
         """Automatically activate relevant skills based on user message.
-        
+
         Args:
             user_message (str): User's message
         """
         relevant_skills = await self._match_skills_to_task(user_message)
-        
+
         for skill_name in relevant_skills:
             if skill_name not in self.active_skills:
                 await self.skill_manager.activate_skill(skill_name)
                 self.active_skills.append(skill_name)
-                
+
                 # Load skill content
                 try:
                     skill_content = self.skill_manager.get_skill_content(skill_name)
